@@ -84,22 +84,59 @@ for k = 1:N
         r  = sqrt(dx^2 + dy^2);
         b  = atan2(dy, dx) - x_true(3);
 
-        z = [r; b] + sqrt(R)*randn(2,1);
+        z = [r; b] + sqrt(Q)*randn(2,1);
+        
+        idx = 3 + 2*i - 1;   % Landmark index in state
         
         %% ---- Initialize landmark if unseen ----
         if ~landmark_initialized(i)
-            delta_x = y_t_predicted(1) + z(1) * cos(z(2) + y_t_predicted(3));
-            delta_y = y_t_predicted(2) + z(1) * sin(z(2) + y_t_predicted(3));
+            u_jx = y_t_predicted(1) + z(1) * cos(z(2) + y_t_predicted(3));
+            u_jy = y_t_predicted(2) + z(1) * sin(z(2) + y_t_predicted(3));
             
-            delta = [delta_x;
-                     delta_y];
-            q = delta' * delta;
-
-            x_est = [x_est; lx; ly];
-
-            P = blkdiag(P, eye(2)*1e3);
+            y_t_predicted(idx) = u_jx;
+            y_t_predicted(idx+1) = u_jy;
+            
             landmark_initialized(i) = true;
             continue;
         end
         
+        delta_x = y_t_predicted(idx) - y_t_predicted(1);
+        delta_y = y_t_predicted(idx+1) - y_t_predicted(2);
+        
+        delta = [delta_x;
+                 delta_y];
+        q = delta' * delta;
+        
+        z_pred = [sqrt(q);
+                  atan2(delta_y, delta_x) - y_t_predicted(3)];
+
+        P1 = [eye(3); zeros(2, 3)];
+        P2 = zeros(5, 2*i - 2);
+        P3 = [zeros(3, 2); eye(2)];
+        P4 = zeros(5, 2*numL - 2*i);
+
+        % Concatenate all parts 
+        F_xj = [P1, P2, P3, P4];
+        
+        h_it = (1/q) * [ -sqrt(q)*delta_x, -sqrt(q)*delta_y,  0,   sqrt(q)*delta_x,  sqrt(q)*delta_y;
+                          delta_y,         -delta_x,         -q,   -delta_y,         delta_x     ];
+        H_it = h_it * F_xj;
+        
+        % Kalman gain
+        S = H_it * Sigma_t_predicted *  H_it' + Q;
+        K = (Sigma_t_predicted * H_it') / S;
+        
+        % Update
+        y_t_predicted = y_t_predicted + K * (z - z_pred);
+        Sigma_t_predicted = (eye(3+2*numL) - K * H_it) * Sigma_t_predicted;
+    end
     
+    y_t_corrected = y_t_predicted;
+    y_t_1 = y_t_corrected;
+    
+    Sigma_t_corrected = Sigma_t_predicted;
+    Sigma_t_1 = Sigma_t_corrected;
+    
+    true_path(:,k) = x_true;
+    est_path(:,k)  = y_t_corrected(1:3);
+end    
