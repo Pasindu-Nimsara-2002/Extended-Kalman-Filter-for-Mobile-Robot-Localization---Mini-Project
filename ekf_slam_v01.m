@@ -16,13 +16,13 @@ v = 1.0;
 w = 0.08;
 
 %% True landmark positions (UNKNOWN to filter)
-landmarks_true = [ 5  10  15  20;
-                  10   0  10  10];
+landmarks_true = [ 5  10  15  10;
+                  10   0  10  15];
 numL = size(landmarks_true,2);
 
 %% Noise covariances
 R = diag([0.01 0.01 0.005]);   % Robot motion noise
-Q = diag([0.3 0.05]);          % Measurement noise
+Q = diag([0.1 0.01]);          % Measurement noise
 
 %% Initial true robot state
 x_true = [0; 0; 0];
@@ -127,7 +127,11 @@ for k = 1:N
         K = (Sigma_t_predicted * H_it') / S;
         
         % Update
-        y_t_predicted = y_t_predicted + K * (z - z_pred);
+        
+        Z_ = z - z_pred;
+        Z_(2) = atan2(sin(Z_(2)), cos(Z_(2)));
+        
+        y_t_predicted = y_t_predicted + K * (Z_);
         Sigma_t_predicted = (eye(3+2*numL) - K * H_it) * Sigma_t_predicted;
     end
     
@@ -139,4 +143,26 @@ for k = 1:N
     
     true_path(:,k) = x_true;
     est_path(:,k)  = y_t_corrected(1:3);
-end    
+
+end 
+
+%% ============================================================
+% PLOTTING
+% ============================================================
+
+figure;
+plot(true_path(1,:), true_path(2,:), 'g-', 'LineWidth', 2); hold on;
+plot(est_path(1,:), est_path(2,:), 'b--', 'LineWidth', 2);
+plot(landmarks_true(1,:), landmarks_true(2,:), 'ro', 'MarkerSize', 10, 'LineWidth', 2);
+
+% Plot estimated landmarks
+for i = 1:numL
+    idx = 3 + 2*i - 1;
+    plot(y_t_corrected(idx), y_t_corrected(idx+1), 'bx', 'MarkerSize', 10, 'LineWidth', 2);
+end
+
+grid on;
+xlabel('X position (m)');
+ylabel('Y position (m)');
+legend('True Trajectory','EKF-SLAM Trajectory','True Landmarks','Estimated Landmarks');
+title('Full EKF-SLAM: Robot and Map Estimation');
