@@ -1,0 +1,102 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage[hmargin=2.5cm,vmargin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{float}
+
+\title{EKF-SLAM Mini Project Report}
+\author{(Your Name) \\\small Course: EN4594}
+\date{December 2025}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+This report documents an Extended Kalman Filter SLAM implementation for a differential-drive mobile robot. Implementation and experiments use the file \texttt{ekf_slam_v01.m}. The document summarizes the algorithm, maps the code to the lecture algorithm, lists differences and suggested improvements, and provides instructions to reproduce results.
+\end{abstract}
+
+\section{Introduction}
+The objective is to estimate the robot pose and a map of point landmarks concurrently using an Extended Kalman Filter (EKF). The state vector is:
+\[
+x = [x_r\; y_r\; \theta_r\; x_{L1}\; y_{L1}\; x_{L2}\; y_{L2}\; \dots]^T.
+\]
+
+\section{Algorithm}
+\subsection{Prediction}
+Robot motion is integrated using the control inputs and the state is linearized about the current estimate. The covariance prediction follows:
+\[
+\Sigma_{t|t-1} = G_t\,\Sigma_{t-1|t-1}\,G_t^T + F_x^T R F_x,
+\]
+where $G_t$ is the Jacobian of the motion model and $F_x$ maps robot noise into the full state.
+
+\subsection{Measurement update}
+For a range-bearing measurement to landmark $j$ the measurement model is
+\[
+z = h(x) = \begin{bmatrix} r\\ b \end{bmatrix} = \begin{bmatrix} \sqrt{(x_{Lj}-x_r)^2 + (y_{Lj}-y_r)^2} \\ \operatorname{atan2}(y_{Lj}-y_r, x_{Lj}-x_r) - \theta_r \end{bmatrix}.
+\]
+Linearize with Jacobian $H$ to compute
+\[
+S = H\Sigma_{t|t-1}H^T + Q, \quad K = \Sigma_{t|t-1}H^T S^{-1},
+\]
+and update state and covariance.
+
+\section{Implementation details}
+The MATLAB script \texttt{ekf_slam_v01.m} implements:
+\begin{itemize}
+  \item Motion prediction with additive control increments and Jacobian-based covariance propagation.
+  \item Process-noise embedding via \texttt{F_x' * R * F_x}.
+  \item Per-landmark range-bearing updates computed sequentially.
+  \item Landmark initialization by inverting the first observation.
+  \item Angle normalization for the measurement innovation.
+\end{itemize}
+
+\section{Matches and differences to lecture}
+Matches include the prediction & update structure, noise mapping, jacobian computation and inverse measurement initialization. Differences and recommended fixes include:
+\begin{itemize}
+  \item \textbf{Landmark covariance at initialization}: currently the code sets landmark means but leaves their covariance as the large prior. The lecture suggests computing the landmark covariance and cross-covariances using the inverse-measurement Jacobian and inserting them into the state covariance.
+  \item \textbf{Initial robot covariance}: code currently sets robot prior covariance to zero; use a non-zero prior for uncertain start.
+  \item \textbf{Angle handling}: normalize the pose angle after updates to keep it within $[-\pi,\pi]$.
+  \item \textbf{Batch vs sequential update}: sequential updates are used; stacking measurements into a single update can be more efficient and numerically stable.
+  \item \textbf{Data association}: the code assumes known correspondences; if your experiments include unknown associations, add a matching/gating step.
+\end{itemize}
+
+\section{How to reproduce}
+Place the code files in the same folder and run in MATLAB:
+\begin{verbatim}
+ekf_slam_v01
+\end{verbatim}
+
+To make results repeatable add at the top of the script:
+\begin{verbatim}
+rng(0)
+\end{verbatim}
+
+Include the results image file \texttt{ekf_slam_results.png} in the project folder and compile the LaTeX with the supplied build script.
+
+\section{Results}
+(Insert figures here.)
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{ekf_slam_results.png}
+  \caption{True path (green), EKF-SLAM estimate (blue dashed), true landmarks (red), estimated landmarks (blue crosses).}
+\end{figure}
+
+\section{Conclusion}
+The provided implementation follows the lecture EKF-SLAM algorithm closely. Implementing landmark covariance initialization and consistent angle wrapping will improve numeric fidelity and reproducibility.
+
+\section*{References}
+Lecture notes: \emph{EN4594 SLAM-II-notes.pdf}. Mini-project brief: \emph{MiniProject_FilterImplementation.pdf}.
+
+\appendix
+\section{Suggested code snippets}
+Wrap-angle helper:
+\begin{verbatim}
+wrap = @(a) atan2(sin(a), cos(a));
+state(3) = wrap(state(3));
+\end{verbatim}
+
+Landmark-covariance initialization (conceptual): compute Jacobian of inverse-measurement and set corresponding blocks in $\Sigma$.
+
+\end{document}
