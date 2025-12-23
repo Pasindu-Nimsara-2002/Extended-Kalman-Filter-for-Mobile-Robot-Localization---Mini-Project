@@ -9,7 +9,7 @@ close all;
 
 %% Simulation parameters
 dt = 0.1;
-N  = 250;
+N  = 350;
 
 %% Control inputs
 v = 1.0;
@@ -46,7 +46,7 @@ est_path  = zeros(3,N);
 % Main EKF-SLAM Loop
 % ============================================================
 
-y_t_1 = u_0;
+u_t_1 = u_0;
 Sigma_t_1 = Sigma_0;
 
 I_1 = eye(3);
@@ -65,12 +65,12 @@ for k = 1:N
     
         %% -------- EKF PREDICTION --------
               
-    y_t_predicted = y_t_1 +  F_x' * [v*dt*cos(y_t_1(3));
-                           v*dt*sin(y_t_1(3));
+    u_t_predicted = u_t_1 +  F_x' * [v*dt*cos(u_t_1(3));
+                           v*dt*sin(u_t_1(3));
                            w*dt];
      
-    p = [0 0 -v*dt*sin(y_t_1(3));
-         0 0  v*dt*cos(y_t_1(3));
+    p = [0 0 -v*dt*sin(u_t_1(3));
+         0 0  v*dt*cos(u_t_1(3));
          0 0  0];
     G_t = I_2 + F_x' * p * F_x;
     Sigma_t_predicted = G_t * Sigma_t_1 * G_t' + R_new;
@@ -90,25 +90,25 @@ for k = 1:N
         
         %% ---- Initialize landmark if unseen ----
         if ~landmark_initialized(i)
-            u_jx = y_t_predicted(1) + z(1) * cos(z(2) + y_t_predicted(3));
-            u_jy = y_t_predicted(2) + z(1) * sin(z(2) + y_t_predicted(3));
+            u_jx = u_t_predicted(1) + z(1) * cos(z(2) + u_t_predicted(3));
+            u_jy = u_t_predicted(2) + z(1) * sin(z(2) + u_t_predicted(3));
             
-            y_t_predicted(idx) = u_jx;
-            y_t_predicted(idx+1) = u_jy;
+            u_t_predicted(idx) = u_jx;
+            u_t_predicted(idx+1) = u_jy;
             
             landmark_initialized(i) = true;
             continue;
         end
         
-        delta_x = y_t_predicted(idx) - y_t_predicted(1);
-        delta_y = y_t_predicted(idx+1) - y_t_predicted(2);
+        delta_x = u_t_predicted(idx) - u_t_predicted(1);
+        delta_y = u_t_predicted(idx+1) - u_t_predicted(2);
         
         delta = [delta_x;
                  delta_y];
         q = delta' * delta;
         
         z_pred = [sqrt(q);
-                  atan2(delta_y, delta_x) - y_t_predicted(3)];
+                  atan2(delta_y, delta_x) - u_t_predicted(3)];
 
         P1 = [eye(3); zeros(2, 3)];
         P2 = zeros(5, 2*i - 2);
@@ -118,8 +118,9 @@ for k = 1:N
         % Concatenate all parts 
         F_xj = [P1, P2, P3, P4];
         
-        h_it = (1/q) * [ -sqrt(q)*delta_x, -sqrt(q)*delta_y,  0,   sqrt(q)*delta_x,  sqrt(q)*delta_y;
-                          delta_y,         -delta_x,         -q,   -delta_y,         delta_x     ];
+        h_it = (1/q) * [ -sqrt(q)*delta_x, -sqrt(q)*delta_y,  0,  sqrt(q)*delta_x,  sqrt(q)*delta_y;
+                  delta_y,         -delta_x,        -q, -delta_y,          delta_x ];
+
         H_it = h_it * F_xj;
         
         % Kalman gain
@@ -131,18 +132,18 @@ for k = 1:N
         Z_ = z - z_pred;
         Z_(2) = atan2(sin(Z_(2)), cos(Z_(2)));
         
-        y_t_predicted = y_t_predicted + K * (Z_);
+        u_t_predicted = u_t_predicted + K * (Z_);
         Sigma_t_predicted = (eye(3+2*numL) - K * H_it) * Sigma_t_predicted;
     end
     
-    y_t_corrected = y_t_predicted;
-    y_t_1 = y_t_corrected;
+    u_t_corrected = u_t_predicted;
+    u_t_1 = u_t_corrected;
     
     Sigma_t_corrected = Sigma_t_predicted;
     Sigma_t_1 = Sigma_t_corrected;
     
     true_path(:,k) = x_true;
-    est_path(:,k)  = y_t_corrected(1:3);
+    est_path(:,k)  = u_t_corrected(1:3);
 
 end 
 
@@ -158,7 +159,7 @@ plot(landmarks_true(1,:), landmarks_true(2,:), 'ro', 'MarkerSize', 10, 'LineWidt
 % Plot estimated landmarks
 for i = 1:numL
     idx = 3 + 2*i - 1;
-    plot(y_t_corrected(idx), y_t_corrected(idx+1), 'bx', 'MarkerSize', 10, 'LineWidth', 2);
+    plot(u_t_corrected(idx), u_t_corrected(idx+1), 'bx', 'MarkerSize', 10, 'LineWidth', 2);
 end
 
 grid on;
