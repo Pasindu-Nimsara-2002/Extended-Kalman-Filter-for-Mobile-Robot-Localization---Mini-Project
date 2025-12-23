@@ -77,23 +77,11 @@ for k = 1:N
     
     %% -------- EKF UPDATE (FOR EACH LANDMARK) --------
     for i = 1:numL
-        
-        % True measurement
-        dx = landmarks_true(1,i) - x_true(1);
-        dy = landmarks_true(2,i) - x_true(2);
-        r  = sqrt(dx^2 + dy^2);
-        b  = atan2(dy, dx) - x_true(3);
-
-        z = [r; b] + sqrt(R)*randn(2,1);
-        
+      
         %% ---- Initialize landmark if unseen ----
         if ~landmark_initialized(i)
-            delta_x = y_t_predicted(1) + z(1) * cos(z(2) + y_t_predicted(3));
-            delta_y = y_t_predicted(2) + z(1) * sin(z(2) + y_t_predicted(3));
-            
-            delta = [delta_x;
-                     delta_y];
-            q = delta' * delta;
+            delta_x = y_t_predicted(1) + z(1)*cos(z(2) + y_t_predicted(3));
+            delta_y = y_t_predicted(2) + z(1)*sin(z(2) + y_t_predicted(3));
 
             x_est = [x_est; lx; ly];
 
