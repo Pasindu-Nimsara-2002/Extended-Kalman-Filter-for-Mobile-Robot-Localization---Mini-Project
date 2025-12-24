@@ -9,15 +9,15 @@ close all;
 
 %% Simulation parameters
 dt = 0.1;
-N  = 350;
+N  = 750;
 
 %% Control inputs
 v = 1.0;
 w = 0.08;
 
 %% True landmark positions (UNKNOWN to filter)
-landmarks_true = [ 5  10  15  10;
-                  10   0  10  15];
+landmarks_true = [ 5  10  15  10  -5  -10  -5;
+                  10   0  10  15  10  15  5];
 numL = size(landmarks_true,2);
 
 %% Noise covariances
@@ -219,9 +219,9 @@ figure; hold on;
 plot(landmarks_true(1,:), landmarks_true(2,:), 'ro', ...
      'MarkerSize', 10, 'LineWidth', 2);
 
-steps = [50 150 350];     % Early, mid, late iterations
+steps = [50 350 750];     % Early, mid, late iterations
 colors = {'r','g','b'};
-labels = {'Early (k=50)', 'Mid (k=150)', 'Final (k=350)'};
+labels = {'Early (k=50)', 'Mid (k=350)', 'Final (k=750)'};
 h_legend = [];
 
 for s = 1:length(steps)
