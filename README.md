@@ -4,7 +4,7 @@ This repository contains a MATLAB implementation of **Simultaneous Localization 
 
 ## 📌 Project Overview
 
-The simulation models a robot moving in a circular trajectory with a constant linear velocity  m/s and angular velocity  rad/s. The system uses range-bearing sensor measurements to detect landmarks and correct the robot's pose estimation.
+The simulation models a robot moving in a circular trajectory with a constant linear velocity 1m/s and angular velocity 0.8rad/s. The system uses range-bearing sensor measurements to detect landmarks and correct the robot's pose estimation.
 
 ### Key Features
 
