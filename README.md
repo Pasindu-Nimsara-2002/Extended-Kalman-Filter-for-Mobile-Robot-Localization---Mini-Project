@@ -43,6 +43,8 @@ The EKF follows a recursive process as described in the course modules:
 
 The filter maintains high stability and accuracy over the **750-step** simulation:
 
+> Note: The figures shown below are image files included in this repository (1.png, 2.png, 3.png).
+
 <p align="center">
 <img src="1.png" width="600">
 
