@@ -113,7 +113,7 @@ git clone https://github.com/Pasindu-Nimsara-2002/Extended-Kalman-Filter-for-Mob
 This project was developed for the **EN4594 Autonomous Systems** module at the University of Moratuwa.
 
 
-* **Author**: Kulasingham P.N. (210303U) .
+* **Author**: Kulasingham P.N.
 
 
 
