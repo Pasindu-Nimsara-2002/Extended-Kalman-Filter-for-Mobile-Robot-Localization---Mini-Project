@@ -27,6 +27,12 @@ The simulation models a robot moving in a circular trajectory with a constant li
 
 The EKF follows a recursive process as described in the course modules:
 
+<p align="center">
+<img src="Picture4.png" width="350" alt="Robot schematic">
+</p>
+
+<i><b>Figure:</b> Robot schematic used in this project (Picture4.png)</i>
+
 1. **Prediction**: Propagates the previous state estimate using a discrete-time Euler integration model.
 
 
